@@ -2,6 +2,7 @@
 // Every query uses placeholders (?) so user input is never pasted into SQL text.
 'use strict';
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 
@@ -20,7 +21,9 @@ async function createDb(opts = {}) {
 
 function createSqlite(opts) {
   const Database = require('better-sqlite3');
-  const file = opts.file || process.env.SQLITE_FILE || path.join(__dirname, '..', 'data', 'accolm-check.db');
+  // Vercel's code folder is read-only; only the temporary folder can be written there.
+  const fallback = process.env.VERCEL ? path.join(os.tmpdir(), 'accolm-check.db') : path.join(__dirname, '..', 'data', 'accolm-check.db');
+  const file = opts.file || process.env.SQLITE_FILE || fallback;
   if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new Database(file);
   db.pragma('journal_mode = WAL');

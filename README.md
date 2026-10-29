@@ -31,6 +31,10 @@ DB_DRIVER=mysql MYSQL_USER=root MYSQL_PASSWORD=yourpass MYSQL_DATABASE=accolmche
 Other variables: `MYSQL_HOST` (default 127.0.0.1), `MYSQL_PORT` (3306), `PORT` (3000), `SQLITE_FILE`.
 On Windows PowerShell, set each variable first, for example `$env:DB_DRIVER="mysql"`.
 
+## Deploying on Vercel
+
+Import the repository with this folder as the project root; Vercel picks up `server.js`, which exports the app as a request handler. Vercel's file system is read-only apart from `/tmp`, so SQLite is kept there, and scan history and report links only last until Vercel recycles the server. For history that lasts, point the app at a hosted MySQL database by setting `DB_DRIVER=mysql` and the `MYSQL_*` variables above in the Vercel project settings.
+
 ## Pages and API
 
 | Path | What it does |

@@ -1,0 +1,26 @@
+{
+  "name": "accolm-check",
+  "version": "1.0.0",
+  "description": "Accolm Check: first-pass screening of how a website collects personal data, mapped to Ghana's Data Protection Act, 2012",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test --test-timeout=20000 test/"
+  },
+  "keywords": [],
+  "author": "Ernest Abel Nanabanyin Mensah",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "bootstrap": "^5.3.8",
+    "cheerio": "^1.2.0",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "mysql2": "^3.24.6"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
