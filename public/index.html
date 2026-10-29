@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accolm Check · Know what your website knows about people</title>
+<meta name="description" content="Accolm Check: a student project. A free first-pass screening of how a website collects personal data, mapped to Ghana's Data Protection Act, 2012.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F6F2EA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110D" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="weave" aria-hidden="true"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><img src="/img/favicon.svg" alt="">Accolm Check</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/" aria-current="page">Scan</a>
+      <a class="nav-how" href="/#how">How it works</a>
+      <a href="/history">History</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow"><b>Act 843</b>Screen your website against Ghana's Data Protection Act, 2012</p>
+      <h1>Know what your website <mark class="hl">knows</mark> about people.</h1>
+      <p class="lede">Every contact form is a door where names, phone numbers and Ghana Card numbers walk in. Paste a web address and see, in plain words, what the page collects and how well it looks after it.</p>
+
+      <form class="scan" id="scan-form" novalidate>
+        <label for="url">Website address</label>
+        <div class="scan-field" id="scan-field">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 3.2 4.8 3.2 7.5s-1 5.2-3.2 7.5c-2.2-2.3-3.2-4.8-3.2-7.5s1-5.2 3.2-7.5Z"/></svg>
+          <input id="url" name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="mybusiness.com.gh" maxlength="2048" required aria-describedby="url-hint form-error">
+          <button class="button" id="scan-btn" type="submit"><span class="spin" aria-hidden="true"></span><span class="label">Check this site</span></button>
+        </div>
+        <p class="form-hint" id="url-hint"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="9" width="12" height="8.5" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg>Public pages only. Nothing is submitted, and no personal data is stored.</p>
+        <div class="form-error" id="form-error" role="alert"></div>
+        <div class="loading" id="loading" aria-live="polite"><div class="loom"></div><span></span></div>
+      </form>
+
+      <div class="demos">
+        <p class="demos-label">No internet, or no site to hand? Run an offline demo.</p>
+        <div class="demo-grid">
+          <button type="button" class="demo" data-demo="non-compliant"><span class="demo-name">Adwoa's Kitchen</span><span class="demo-meta">Catering quote form</span><span class="status fail">Fails</span></button>
+          <button type="button" class="demo" data-demo="compliant"><span class="demo-name">Sika Tailoring</span><span class="demo-meta">Fitting booking form</span><span class="status pass">Passes</span></button>
+        </div>
+      </div>
+    </div>
+
+    <figure class="specimen" aria-hidden="true">
+      <div class="sheet">
+        <div class="sheet-url"><span class="proto">http://</span>adwoas-kitchen.demo/quote</div>
+        <p class="sheet-title">Request a quote</p>
+        <div class="field"><span class="field-label">Full name</span><span class="field-box"></span></div>
+        <div class="field"><span class="field-label"><mark class="hl d1">Ghana Card number</mark></span><span class="field-box">GHA-</span></div>
+        <div class="field"><span class="field-label"><mark class="hl d2">Date of birth</mark></span><span class="field-box">DD / MM / YYYY</span></div>
+        <div class="field"><span class="field-label">Phone or WhatsApp</span><span class="field-box"></span></div>
+        <div class="sheet-check"><span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m2.5 6.2 2.3 2.3 4.7-5"/></svg></span><mark class="hl d3">Send me offers</mark></div>
+        <span class="sheet-submit">Send request</span>
+      </div>
+      <div class="flag f1"><b>s.28 · Fix now</b>Form sends personal data over plain http://</div>
+      <div class="flag f2"><b>s.19 · Check</b>Is a Ghana Card really needed for a quote?</div>
+      <div class="flag f3"><b>s.40 · Fix now</b>Marketing box is ticked before anyone agrees</div>
+    </figure>
+  </div>
+</section>
+
+<section class="results" id="results" hidden>
+  <div class="wrap"><div id="result"></div></div>
+</section>
+
+<section class="section" id="how">
+  <div class="wrap split">
+    <div class="split-head">
+      <p class="kicker">How it works</p>
+      <h2 class="section-title">A stranger's eye on your forms.</h2>
+      <p class="section-lede">The scanner visits the page from our server, exactly as a member of the public would. It does not log in, submit forms or guess passwords. It reads what is already public and compares it with the habits Act 843 expects.</p>
+    </div>
+    <ol class="steps">
+      <li><span class="step-n">01</span><div><h3>Find the doors</h3><p>Every form and field is read. Fields that collect names, phone and MoMo numbers, Ghana Card, date of birth, addresses or payment details are flagged.</p></div></li>
+      <li><span class="step-n">02</span><div><h3>Check the locks</h3><p>HTTPS, where forms send their data, browser security headers, tracking scripts, a privacy notice, consent boxes and who is responsible.</p></div></li>
+      <li><span class="step-n">03</span><div><h3>Explain in plain words</h3><p>Each finding is tied to one of the eight principles in section 17, with what it means for real people and a fix you can hand to your web designer.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section sunken">
+  <div class="wrap">
+    <figure class="pull">
+      <div>
+        <blockquote>Checking for empty fields in JavaScript improves the user's experience, but it is not security.</blockquote>
+        <figcaption>A lesson from my industrial attachment with Accolm, an IT security company. Accolm Check applies the same idea to whole websites: what the browser shows is only half the story.</figcaption>
+      </div>
+      <p class="statute"><b>Section 19 of Act 843</b>Personal data may only be processed if the purpose is necessary, relevant and not excessive.</p>
+    </figure>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <p class="kicker">The yardstick</p>
+    <h2 class="section-title">Eight principles, one woven cloth.</h2>
+    <p class="section-lede">Section 17 of the Act sets out eight principles. Every check the scanner runs is filed under one of them.</p>
+    <div id="principles"></div>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="/"><img src="/img/favicon.svg" alt="">Accolm Check</a>
+      <p>Student project inspired by an industrial attachment at Accolm. Not an official Accolm product. First-pass screening, not legal advice. It cannot confirm that a website complies with the Data Protection Act, 2012 (Act 843); for an authoritative position, consult the Data Protection Commission or a qualified lawyer.</p>
+    </div>
+    <div>
+      <p>Built by Ernest Abel Nanabanyin Mensah · BTech Computer Technology, Kumasi Technical University · Industrial attachment project</p>
+      <nav class="footer-links" aria-label="Footer"><a href="/">Scan a site</a><a href="/#how">How it works</a><a href="/history">Scan history</a></nav>
+    </div>
+  </div>
+</footer>
+<script src="/js/render.js"></script>
+<script src="/js/home.js"></script>
+</body></html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><title>Sika Tailoring Studio | Demo (designed to pass)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;background:#f4f7f2}label{display:block;margin-top:.6rem}input,textarea{width:100%;padding:.4rem}.cookie-banner{background:#111;color:#fff;padding:.6rem}</style>
+</head>
+<body>
+<div class="cookie-banner" role="dialog">We use one essential cookie to remember your language. No advertising trackers. <button>Accept</button> <a href="/privacy.html#cookies" style="color:#f2b705">Manage preferences</a></div>
+<p style="background:#0b6e4f;color:#fff;padding:.5rem">DEMO PAGE: this fictional site is designed to pass Accolm Check.</p>
+<h1>Sika Tailoring Studio</h1>
+<p>Kaba and slit, smocks and suits, sewn in Osu.</p>
+<section>
+<h2>Book a fitting</h2>
+<p>We use your name and phone number only to confirm your fitting appointment. We do not share them with anyone else.</p>
+<form id="booking-form" action="/book" method="post">
+  <label for="name">Your name</label><input id="name" name="name" autocomplete="name" required>
+  <label for="tel">Phone number</label><input id="tel" name="phone" type="tel" autocomplete="tel" placeholder="e.g. 024 123 4567" required>
+  <label for="email">Email (optional)</label><input id="email" name="email" type="email" autocomplete="email">
+  <label for="note">What would you like made?</label><textarea id="note" name="note"></textarea>
+  <label><input type="checkbox" name="consent" required> I agree to Sika Tailoring Studio using these details to arrange my fitting, as explained in the <a href="/privacy.html">privacy notice</a>.</label>
+  <label><input type="checkbox" name="newsletter"> Send me occasional news and updates (optional)</label>
+  <button type="submit">Book my fitting</button>
+</form>
+</section>
+<footer>
+<p>Sika Tailoring Studio, 14 Oxford Street, Osu, Accra. Digital address GA-123-4567.</p>
+<p>Email <a href="mailto:hello@sika-tailoring.demo">hello@sika-tailoring.demo</a> · Phone <a href="tel:+233241234567">+233 24 123 4567</a></p>
+<p><a href="/privacy.html">Privacy notice</a></p>
+</footer>
+</body>
+</html>
