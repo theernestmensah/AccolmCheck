@@ -16,7 +16,30 @@ function rowToSummary(r) {
 async function createDb(opts = {}) {
   const driver = (opts.driver || process.env.DB_DRIVER || 'sqlite').toLowerCase();
   if (driver === 'mysql') return createMysql(opts);
-  return createSqlite(opts);
+  if (!process.env.VERCEL) return createSqlite(opts);
+  try { return createSqlite(opts); } catch (e) {
+    console.error('[db] SQLite is unavailable on this Vercel server, keeping scans in memory:', e.message);
+    return createMemory();
+  }
+}
+
+// Last resort on Vercel: scans live in this server's memory until Vercel recycles it.
+function createMemory() {
+  const rows = [];
+  return {
+    driver: 'memory',
+    async saveScan(r, demo = false) {
+      const pid = newPublicId();
+      rows.unshift({ public_id: pid, url: r.url, final_url: r.finalUrl, host: new URL(r.finalUrl).hostname, page_title: r.title, score: r.score, band: r.band.key,
+        pass_count: r.counts.pass, warn_count: r.counts.warn, fail_count: r.counts.fail, is_demo: demo ? 1 : 0, result_json: JSON.stringify(r),
+        created_at: new Date().toISOString().slice(0, 19).replace('T', ' ') });
+      rows.length = Math.min(rows.length, 500);
+      return pid;
+    },
+    async getScan(pid) { const row = rows.find((x) => x.public_id === pid); return row ? { ...rowToSummary(row), result: JSON.parse(row.result_json) } : null; },
+    async listScans(limit = 50) { return rows.slice(0, limit).map(rowToSummary); },
+    async close() {},
+  };
 }
 
 function createSqlite(opts) {
