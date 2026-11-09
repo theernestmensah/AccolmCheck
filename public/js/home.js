@@ -6,54 +6,85 @@
   const btn = document.getElementById('scan-btn');
   const out = document.getElementById('out');
   const said = document.getElementById('scan-status');
-  const demos = document.querySelectorAll('[data-demo]');
-  const DEMO_NAME = { 'non-compliant': 'adwoas-kitchen', compliant: 'sika-tailoring' };
+  const sims = document.querySelectorAll('[data-demo]');
+  const DEMO_HOST = { 'non-compliant': 'adwoas-kitchen.demo', compliant: 'sika-tailoring.demo' };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   let busy = false;
 
   // Quick browser-side check for a friendlier message. The server checks again, properly.
   function looksLikeUrl(v) { return /^(https?:\/\/)?[^\s/$.?#][^\s]*\.[^\s]{2,}$/i.test(v.trim()); }
-
-  function fail(command, msg) {
-    out.innerHTML = `<ol class="log"><li class="cmdline"><span class="ps">$</span> ${esc(command)}</li><li class="err"><span class="bad">✗ error:</span> ${esc(msg)}</li></ol>`;
-    said.textContent = msg;
-  }
+  const hostOf = (v) => v.replace(/^https?:\/\//i, '').split(/[/?#]/)[0];
 
   function setBusy(on) {
     busy = on;
     btn.disabled = on;
-    btn.textContent = on ? 'running…' : 'run ↵';
-    demos.forEach((b) => { b.disabled = on; });
+    btn.firstChild.textContent = on ? 'Scanning ' : 'Initiate scan ';
+    sims.forEach((b) => { b.disabled = on; });
   }
 
-  const actions = (id, again) => `<a class="key solid" href="/report?id=${encodeURIComponent(id)}">open shareable report</a>` +
-    (again ? ' <button type="button" class="key" id="again">scan another site</button>' : '');
+  function panel(host, mode) {
+    out.innerHTML = `<div class="shell out-inner"><section class="panel scanning" aria-label="Scan in progress">
+      <div class="sweep" aria-hidden="true"><i></i></div>
+      <div>
+        <p class="label">Scanning target</p>
+        <p class="scan-host">${esc(host)}</p>
+        <p class="scan-meta">ELAPSED <span class="elapsed">0.0</span> s · TIMEOUT 8.0 s · ${mode}</p>
+        <ol class="pipeline busy"><li>RESOLVE</li><li>FETCH</li><li>PARSE FORMS</li><li>RUN 14 CHECKS</li><li>SCORE</li></ol>
+      </div>
+    </section></div>`;
+    out.scrollIntoView({ behavior: FX.calm ? 'auto' : 'smooth', block: 'start' });
+  }
 
-  async function run(payload, command) {
+  function failed(host, msg) {
+    out.innerHTML = `<div class="shell out-inner"><section class="panel scanning scan-error" aria-label="Scan failed">
+      <div class="sweep" aria-hidden="true"></div>
+      <div>
+        <p class="label">Scan failed${host ? ` · ${esc(host)}` : ''}</p>
+        <p class="scan-host">${esc(msg)}</p>
+        <p class="scan-meta">CHECK THE ADDRESS AND TRY AGAIN, OR RUN A SIMULATION</p>
+      </div>
+    </section></div>`;
+    said.textContent = msg;
+  }
+
+  const actions = (id, again) => `<a class="cta" href="/report?id=${encodeURIComponent(id)}">Open report ▸</a>` +
+    (again ? '<button type="button" class="ghost" id="again">New scan</button>' : '');
+
+  async function run(payload, host) {
     if (busy) return;
     setBusy(true);
     input.setAttribute('aria-invalid', 'false');
-    out.innerHTML = `<ol class="log"><li class="cmdline"><span class="ps">$</span> ${esc(command)}</li>
-      <li><span class="spin"></span>${payload.demo ? 'reading the offline demo site' : 'reading the page the way a visitor would'} <span class="dim">(up to 8 s)</span></li></ol>`;
-    const stop = A843.spinner(out.querySelector('.spin'));
-    said.textContent = 'Scanning…';
-    const started = performance.now();
+    panel(host, payload.demo ? 'OFFLINE SIMULATION' : 'LIVE FETCH FROM SERVER');
+    said.textContent = `Scanning ${host}…`;
+    const shown = performance.now();
+    const elapsed = out.querySelector('.elapsed');
+    const timer = setInterval(() => { elapsed.textContent = ((performance.now() - shown) / 1000).toFixed(1); }, 100);
     try {
+      const sent = performance.now();
       const res = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `The scan failed: the server answered ${res.status}${res.statusText ? ' ' + res.statusText : ''}. Please try again.`);
-      stop();
+      const ms = performance.now() - sent;
+      if (!res.ok) throw new Error(data.error || `The scan failed: the server answered ${res.status}${res.statusText ? ' ' + res.statusText : ''}.`);
+      // Let the sweep finish a turn so the hand-over to the dashboard is visible.
+      if (!FX.calm) await wait(Math.max(0, 1200 - (performance.now() - shown)));
+      clearInterval(timer);
+      out.querySelector('.pipeline').className = 'pipeline done';
+      if (!FX.calm) await wait(350);
       const d = { ...data, demo: !!payload.demo };
-      A843.render(out, d, { log: { command, demo: d.demo, ms: performance.now() - started }, reportId: data.id, actions: actions(data.id, true) });
-      said.textContent = `Scan finished. Score ${d.score} out of 100: ${d.band.label}.`;
+      out.innerHTML = '<div class="shell out-inner"></div>';
+      A843.render(out.firstChild, d, {
+        log: { command: payload.demo ? `scan --simulate ${host}` : `scan ${host}`, demo: d.demo, ms },
+        reportId: data.id, actions: actions(data.id, true),
+      });
+      said.textContent = `Scan finished. Score ${d.score} out of 100: ${d.band.label}. ${d.counts.fail} to fix now, ${d.counts.warn} to check, ${d.counts.pass} passed.`;
       document.getElementById('again').addEventListener('click', () => {
         input.value = '';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: FX.calm ? 'auto' : 'smooth' });
         input.focus({ preventScroll: true });
       });
-      await A843.reveal(out);
     } catch (e) {
-      stop();
-      fail(command, e instanceof TypeError ? 'Could not reach the Accolm Check server. Check your connection and try again.' : e.message);
+      clearInterval(timer);
+      failed(host, e instanceof TypeError ? 'Could not reach the Accolm Check server. Check your connection and try again.' : e.message);
     } finally { setBusy(false); }
   }
 
@@ -62,19 +93,20 @@
     const v = input.value.trim();
     if (!looksLikeUrl(v)) {
       input.setAttribute('aria-invalid', 'true');
-      fail(`scan ${v}`, 'Enter a web address, for example mybusiness.com.gh');
+      failed(v, 'Enter a web address, for example mybusiness.com.gh');
       input.focus();
       return;
     }
-    run({ url: v }, `scan ${v}`);
+    run({ url: v }, hostOf(v));
   });
-  demos.forEach((b) => b.addEventListener('click', () => run({ demo: b.dataset.demo }, `scan --demo ${DEMO_NAME[b.dataset.demo]}`)));
+  sims.forEach((b) => b.addEventListener('click', () => run({ demo: b.dataset.demo }, DEMO_HOST[b.dataset.demo])));
 
-  // The eight principles in the manual page
+  // The eight principles in the briefing
   fetch('/api/principles').then((r) => (r.ok ? r.json() : Promise.reject(new Error()))).then((p) => {
-    document.getElementById('principles').innerHTML = A843.ledgerHtml(Object.values(p));
+    document.getElementById('principles').innerHTML = Object.values(p).map((x) =>
+      `<article class="panel"><p class="l">s.17(${esc(x.letter)})</p><h3>${esc(x.name)}</h3><p>${esc(x.plain)}</p></article>`).join('');
   }).catch(() => {
-    document.getElementById('principles').innerHTML = '<p class="dim"># could not load the principles: the server did not answer.</p>';
+    document.getElementById('principles').innerHTML = '<p class="loading-line bad">// could not load the principles: the scan api did not answer.</p>';
   });
 
   // Open a saved scan inline: /?scan=<report id>
@@ -82,7 +114,8 @@
   if (id) {
     fetch('/api/scans/' + encodeURIComponent(id)).then((r) => (r.ok ? r.json() : null)).then((data) => {
       if (!data) return;
-      A843.render(out, { ...data.result, demo: data.demo, createdAt: data.createdAt }, { log: { command: `report ${data.id}`, demo: data.demo }, reportId: data.id, actions: actions(data.id, false) });
+      out.innerHTML = '<div class="shell out-inner"></div>';
+      A843.render(out.firstChild, { ...data.result, demo: data.demo, createdAt: data.createdAt }, { log: { command: `open ${data.id}`, demo: data.demo }, reportId: data.id, actions: actions(data.id, false) });
       if (location.hash !== '#top') out.scrollIntoView();
     });
   }

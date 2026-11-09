@@ -100,4 +100,4 @@ screenshots/         home, result, report, history, mobile, sample PDF
 
 ## Licence
 
-MIT for the code. Bootstrap is MIT. The fonts (Bricolage Grotesque, Inter Tight, Space Mono) are under the SIL Open Font License.
+MIT for the code. Bootstrap is MIT. The fonts (Chakra Petch, Inter Tight, Space Mono, and Bricolage Grotesque from the earlier design) are under the SIL Open Font License.

@@ -3,34 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Page not found · Accolm Check</title>
+<title>Signal lost · Accolm Check</title>
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0E0F0B">
+<meta name="theme-color" content="#04070C">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<header class="bar">
-  <div class="wrap">
-    <a class="brand" href="/"><span class="glyph" aria-hidden="true"><i></i><i></i><i></i></span>accolm-check</a>
+<header class="topbar">
+  <div class="shell">
+    <a class="brand" href="/" aria-label="Accolm Check home"><svg viewBox="0 0 30 34" aria-hidden="true"><path d="M15 1 29 9v16L15 33 1 25V9z" fill="none" stroke="#22E3FF" stroke-width="1.6"/><rect x="8.6" y="10" width="3.6" height="14" fill="#F2B705"/><rect x="13.2" y="10" width="3.6" height="14" fill="#1F9E6E"/><rect x="17.8" y="10" width="3.6" height="14" fill="#E0313F"/></svg><span class="wordmark">ACCOLM<span class="sl">//</span>CHECK</span></a>
     <nav class="menu" aria-label="Main">
-      <a href="/">scan</a>
-      <a href="/history">history</a>
-      <a href="/#help">help</a>
+      <a href="/">Scan</a>
+      <a href="/history">Archive</a>
+      <a href="/#briefing">Briefing</a>
     </nav>
   </div>
 </header>
 
-<main id="main" class="wrap">
-  <section class="page-head">
-    <h1 class="cmd"><span class="ps" aria-hidden="true">$ </span>open <span class="opt">this page</span></h1>
-  </section>
-  <ol class="log page-body">
-    <li><span class="bad">✗</span> accolm-check: no such page <span class="dim">(404)</span></li>
-    <li class="dim"># the address may be mistyped, or the page may have moved. If you were opening a report, check that the whole link was copied.</li>
-  </ol>
-  <p class="actions"><a class="key solid" href="/">scan a site</a> <a class="key" href="/history">scan history</a></p>
+<main id="main" class="shell lost">
+  <p class="code" aria-hidden="true">404</p>
+  <p class="kicker"><span class="dot off"></span>Signal lost</p>
+  <h1>This page is not on the network.</h1>
+  <p>The address may be mistyped, or the page may have moved. If you were opening a report, check that the whole link was copied.</p>
+  <div class="acts"><a class="cta" href="/">New scan ▸</a><a class="ghost" href="/history">Open archive</a></div>
 </main>
 </body></html>

@@ -6,43 +6,54 @@
 <title>Accolm Check report</title>
 <meta name="description" content="Accolm Check: a student project. A free first-pass screening of how a website collects personal data, mapped to Ghana's Data Protection Act, 2012.">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0E0F0B">
+<meta name="theme-color" content="#04070C">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<header class="bar">
-  <div class="wrap">
-    <a class="brand" href="/"><span class="glyph" aria-hidden="true"><i></i><i></i><i></i></span>accolm-check</a>
+<header class="topbar">
+  <div class="shell">
+    <a class="brand" href="/" aria-label="Accolm Check home"><svg viewBox="0 0 30 34" aria-hidden="true"><path d="M15 1 29 9v16L15 33 1 25V9z" fill="none" stroke="#22E3FF" stroke-width="1.6"/><rect x="8.6" y="10" width="3.6" height="14" fill="#F2B705"/><rect x="13.2" y="10" width="3.6" height="14" fill="#1F9E6E"/><rect x="17.8" y="10" width="3.6" height="14" fill="#E0313F"/></svg><span class="wordmark">ACCOLM<span class="sl">//</span>CHECK</span></a>
     <nav class="menu" aria-label="Main">
-      <a href="/">scan</a>
-      <a href="/history">history</a>
-      <a href="/#help">help</a>
+      <a href="/">Scan</a>
+      <a href="/history">Archive</a>
+      <a href="/#briefing">Briefing</a>
     </nav>
+    <div class="sys"><span class="clock" id="clock"></span><span class="pill" data-sys><span class="dot"></span><span class="txt">LINKING…</span></span></div>
   </div>
 </header>
 
-<main id="main" class="wrap">
+<main id="main" class="shell">
   <section class="page-head">
     <div>
-      <a class="back" href="/history">← history</a>
-      <p class="print-only">accolm-check · first-pass screening report · Data Protection Act, 2012 (Act 843)</p>
-      <h1 class="cmd"><span class="ps" aria-hidden="true">$ </span>report <span class="opt" id="report-id"></span></h1>
+      <a class="back" href="/history">← ARCHIVE</a>
+      <p class="print-only label">ACCOLM//CHECK · first-pass screening report · Data Protection Act, 2012 (Act 843)</p>
+      <h1>Screening report <span class="id" id="report-id"></span></h1>
     </div>
-    <p class="actions no-print">
-      <button class="key solid" id="print-btn" type="button">print / save as pdf</button>
-      <button class="key" id="copy-btn" type="button"><span>copy link</span></button>
-    </p>
+    <div class="acts no-print">
+      <button class="cta" id="print-btn" type="button">Print / save PDF</button>
+      <button class="ghost" id="copy-btn" type="button"><span>Copy link</span></button>
+    </div>
   </section>
-  <div class="page-body" id="report" aria-busy="true"><ol class="log"><li><span class="spin" id="loading-spin"></span>reading report…</li></ol></div>
-  <p class="foot dim"># accolm-check · automated first-pass screening of publicly visible pages · not legal advice · references: Data Protection Act, 2012 (Act 843), ss. 17–28, 32–33, 37, 40, 46.</p>
+  <div class="page-body" id="report" aria-busy="true"><p class="loading-line"><span class="spin"></span>RETRIEVING REPORT…</p></div>
+  <p class="label">Accolm Check · automated first-pass screening of publicly visible pages · not legal advice · references: Data Protection Act, 2012 (Act 843), ss. 17–28, 32–33, 37, 40, 46.</p>
 </main>
 
-<footer class="status">
-  <div class="wrap"><span>accolm-check 1.0 · student project, not an official Accolm product · not legal advice</span><span id="api-status">api …</span></div>
+<footer class="foot">
+  <div class="shell">
+    <div>
+      <p><b>ACCOLM//CHECK</b> · Student project inspired by an industrial attachment at Accolm. Not an official Accolm product. First-pass screening, not legal advice.</p>
+      <p>Built by Ernest Abel Nanabanyin Mensah · BTech Computer Technology, Kumasi Technical University · Industrial attachment project</p>
+    </div>
+    <div>
+      <p class="sysline" data-sys><span class="dot"></span><span class="txt">LINKING…</span></p>
+      <nav aria-label="Footer"><a href="/">Scan</a><a href="/history">Archive</a><a href="/#briefing">Briefing</a></nav>
+    </div>
+  </div>
 </footer>
+<script src="/js/fx.js"></script>
 <script src="/js/render.js"></script>
 <script src="/js/report.js"></script>
 </body></html>
