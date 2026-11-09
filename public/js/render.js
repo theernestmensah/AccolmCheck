@@ -1,121 +1,176 @@
-// Shared rendering for scan results (home page and report page).
+// Shared rendering for scan results (home page and report page), drawn as console output.
 // Everything that came from a scanned website is escaped before it is shown,
 // because a hostile page could put HTML or script in its title or field names.
 (function () {
   'use strict';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const STATUS = { pass: 'Pass', warn: 'Check', fail: 'Fix now', na: 'Not tested' };
+  const TAG = { pass: 'PASS', warn: 'CHECK', fail: 'FIX', na: '—' };
   const SENSITIVE = ['Ghana Card / national ID', 'Date of birth', 'Payment card', 'Mobile money number'];
   const ORDER = { fail: 0, warn: 1, pass: 2 };
-  const RING = 2 * Math.PI * 52; // circumference of the score dial
-  const EMPTY = { fail: 'Nothing needs fixing right away.', warn: 'Nothing is left to check by hand.', pass: 'No checks passed on this page.' };
-  const ICON = {
-    info: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v4.5M10 6.2v.1" stroke-linecap="round"/></svg>',
-    fix: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  };
+  const METER = 30; // cells in the score bar
+  const EMPTY = { fail: 'nothing needs fixing right away.', warn: 'nothing is left to check by hand.', pass: 'no checks passed on this page.' };
+  const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Scan dates are stored in UTC without a zone ("2026-10-28 20:22:05").
   function date(s) {
     return s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '';
   }
-  const status = (s) => `<span class="status ${esc(s)}">${STATUS[s] || ''}</span>`;
+  const tag = (s) => `<span class="tag ${esc(s)}">[${TAG[s] || '—'}]</span>`;
+  const shortSec = (sections) => (sections[0] || '').split(' ')[0] + (sections.length > 1 ? '+' : '');
 
-  // The eight principles as a reference list, with no results attached (home page).
-  function ledgerHtml(principles) {
-    return '<ol class="ledger">' + principles.map((p) => `
-      <li><span class="letter">(${esc(p.letter)})</span><div><h3>${esc(p.name)}</h3><p>${esc(p.plain)}</p></div></li>`).join('') + '</ol>';
+  // Braille spinner for a line that is still running; returns a function that stops it.
+  function spinner(el) {
+    const frames = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+    let i = 0;
+    el.textContent = frames[0];
+    const t = setInterval(() => { el.textContent = frames[++i % frames.length]; }, 80);
+    return () => clearInterval(t);
   }
 
-  // The eight principles with this scan's result for each.
+  // The eight principles as a manual-page list, with no results attached (home page).
+  function ledgerHtml(principles) {
+    return '<dl class="opts">' + principles.map((p) => `<dt>(${esc(p.letter)}) ${esc(p.name)}</dt><dd>${esc(p.plain)}</dd>`).join('') + '</dl>';
+  }
+
+  // What the scanner did, line by line, built only from the saved result.
+  function logLines(d, meta = {}) {
+    const lines = [];
+    const line = (sym, key, val) => lines.push(`<li class="ln"><span class="sym">${sym}</span><span class="k">${key}</span><span>${val}</span></li>`);
+    const find = (id) => d.findings.find((f) => f.id === id);
+    const status = (code) => `<span class="${code < 400 ? 'ok' : 'bad'}">${Number(code) || ''}</span>`;
+    if (meta.command) lines.push(`<li class="cmdline"><span class="ps">$</span> ${esc(meta.command)}</li>`);
+    if (meta.demo) line('→', 'read', `${esc(d.finalUrl)} <span class="dim">(offline demo copy)</span>`);
+    else if (d.url && d.url !== d.finalUrl) { line('→', 'GET', esc(d.url)); line('↪', 'redirect', `${esc(d.finalUrl)} ${status(d.httpStatus)}`); }
+    else line('→', 'GET', `${esc(d.finalUrl)} ${status(d.httpStatus)}`);
+    const forms = d.forms || [];
+    const personal = forms.filter((f) => f.personal && f.personal.length);
+    line('→', 'forms', `${forms.length} found · ${personal.length} collect${personal.length === 1 ? 's' : ''} personal data`);
+    for (const f of personal) {
+      line('', '', `#${esc(f.id)} ${esc(String(f.method).toUpperCase())} → ${esc(f.action)} · ${f.personal.length} personal field${f.personal.length === 1 ? '' : 's'}`);
+    }
+    const pn = find('privacy_notice');
+    if (pn) line('→', 'privacy', { pass: '<span class="ok">notice linked</span>', warn: '<span class="warn">notice found, not linked beside every form</span>', fail: '<span class="bad">no notice found</span>' }[pn.status] || '');
+    line('→', 'trackers', d.trackers && d.trackers.length ? `<span class="warn">${d.trackers.map(esc).join(', ')}</span>` : '<span class="ok">none seen</span>');
+    const h = find('headers');
+    if (h) {
+      const n = (h.evidence.match(/: present/g) || []).length;
+      line('→', 'headers', `<span class="${n === 4 ? 'ok' : n ? 'warn' : 'bad'}">${n} of 4</span> security headers set`);
+    }
+    const c = d.counts;
+    lines.push(`<li class="done"><span class="ok">✓</span> ${d.findings.length} checks run · <span class="fix">${c.fail} fix</span> · <span class="check">${c.warn} check</span> · <span class="pass">${c.pass} pass</span>${meta.ms ? ` <span class="dim">· ${meta.ms < 1000 ? `${Math.round(meta.ms)} ms` : `${(meta.ms / 1000).toFixed(1)} s`}</span>` : ''}</li>`);
+    return lines;
+  }
+
+  function inventoryHtml(d) {
+    const inv = d.inventory || {};
+    const keys = Object.keys(inv);
+    const trackers = d.trackers && d.trackers.length ? `<p class="legend">trackers: <span class="check">${d.trackers.map(esc).join(', ')}</span></p>` : '';
+    if (!keys.length) return '<p class="dim">No forms collecting personal data were found on this page.</p>' + trackers;
+    const kind = (k) => (k.startsWith('Special') ? 'special' : SENSITIVE.includes(k) ? 'sensitive' : '');
+    const mark = { special: '**', sensitive: '*', '': '' };
+    const kinds = new Set(keys.map(kind));
+    const legend = [kinds.has('sensitive') && '<span class="check">*</span> sensitive', kinds.has('special') && '<span class="fix">**</span> special personal data (s.37)'].filter(Boolean).join('   ');
+    return '<ul class="collects">' + keys.map((k) => `<li class="${kind(k)}">${esc(k.toLowerCase())}${mark[kind(k)]}${inv[k] > 1 ? `<span class="n"> ×${inv[k]}</span>` : ''}</li>`).join('') + '</ul>' +
+      (legend ? `<p class="legend">${legend}</p>` : '') + trackers;
+  }
+
   function principlesHtml(principles) {
-    return '<ul class="pstatus">' + principles.map((p) => `
-      <li title="${esc(p.plain)}"><span class="letter">(${esc(p.letter)})</span><span>${esc(p.name)}</span>${status(p.status)}</li>`).join('') + '</ul>';
+    return '<ol class="leaders">' + principles.map((p) => `<li title="${esc(p.plain)}"><span class="l">(${esc(p.letter)})</span><span class="name">${esc(p.name)}</span><span class="dots"></span>${tag(p.status)}</li>`).join('') + '</ol>';
   }
 
   function findingHtml(f) {
-    return `<article class="finding ${esc(f.status)}" data-status="${esc(f.status)}">
-      <div class="finding-top">${status(f.status)}<span class="finding-ref">${esc(f.principleName)} · ${f.sections.map(esc).join(' · ')}</span></div>
-      <h4>${esc(f.title)}</h4>
-      <p>${esc(f.explain)}</p>
-      <div class="evidence"><span>What we found</span>${esc(f.evidence)}</div>
-      ${f.status !== 'pass' ? `<div class="fix"><span class="fix-label">${ICON.fix}How to fix</span><p>${esc(f.fix)}</p></div>` : ''}
-    </article>`;
+    return `<details class="f ${esc(f.status)}" data-status="${esc(f.status)}"${f.status === 'pass' ? '' : ' open'}>
+      <summary>${tag(f.status)}<span class="sec">${esc(shortSec(f.sections))}</span><span class="t">${esc(f.title)}</span></summary>
+      <div class="fb">
+        <p class="what">${esc(f.explain)}</p>
+        <p class="kvrow"><span>found</span><span class="v">${esc(f.evidence)}</span></p>
+        ${f.status !== 'pass' ? `<p class="kvrow"><span>fix</span><span class="v">${esc(f.fix)}</span></p>` : ''}
+        <p class="ref">(${esc(f.principleLetter)}) ${esc(f.principleName)} · ${f.sections.map(esc).join(' · ')}</p>
+      </div>
+    </details>`;
   }
 
-  function inventoryHtml(inv) {
-    const keys = Object.keys(inv || {});
-    if (!keys.length) return '<p class="muted">No forms collecting personal data were found on this page.</p>';
-    const kind = (k) => (k.startsWith('Special') ? 'special' : SENSITIVE.includes(k) ? 'sensitive' : '');
-    const kinds = new Set(keys.map(kind));
-    const key = [kinds.has('sensitive') && '<span class="k-sensitive">Sensitive</span>', kinds.has('special') && '<span class="k-special">Special personal data (s.37)</span>'].filter(Boolean).join('');
-    return '<ul class="chips">' + keys.map((k) => `<li class="chip ${kind(k)}">${esc(k)}${inv[k] > 1 ? `<span class="chip-n">×${inv[k]}</span>` : ''}</li>`).join('') + '</ul>' +
-      (key ? `<p class="chip-key">${key}</p>` : '');
-  }
-
-  function headHtml(d, opts) {
-    const score = Math.max(0, Math.min(100, Number(d.score) || 0));
-    const when = date(d.createdAt);
-    const c = d.counts;
-    return `<header class="report-head band-${esc(d.band.key)}">
-      <div class="dial" role="img" aria-label="Score: ${score} out of 100">
-        <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="52"/><circle class="value" cx="60" cy="60" r="52" stroke-dasharray="${(RING * score / 100).toFixed(1)} ${RING.toFixed(1)}"/></svg>
-        <div class="dial-label" aria-hidden="true"><span class="dial-num">${score}</span><span class="dial-of">out of 100</span></div>
-      </div>
-      <div>
-        <p class="report-kicker">Screening result${d.demo ? ' · demo site' : ''}</p>
-        <h2 class="band-label">${esc(d.band.label)}</h2>
-        <p class="site-title">${esc(d.title)}</p>
-        <p class="site-meta">${esc(d.finalUrl)}${when ? ` · Scanned ${esc(when)}` : ''}</p>
-      </div>
-      ${opts.actions ? `<div class="report-actions no-print">${opts.actions}</div>` : ''}
-      <div class="tally">
-        <div class="tally-bar" aria-hidden="true"><span class="t-fail" data-n="${c.fail}"></span><span class="t-warn" data-n="${c.warn}"></span><span class="t-pass" data-n="${c.pass}"></span></div>
-        <p class="tally-legend"><span><b>${c.fail}</b> to fix now</span><span><b>${c.warn}</b> to check</span><span><b>${c.pass}</b> passed</span><span class="total">${c.fail + c.warn + c.pass} checks in total</span></p>
-      </div>
-    </header>`;
-  }
-
+  // opts.log: { command, demo, ms } to print the scan log; opts.reportId; opts.actions (HTML)
   function render(el, d, opts = {}) {
     const findings = [...d.findings].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
-    const n = { all: findings.length, fail: d.counts.fail, warn: d.counts.warn, pass: d.counts.pass };
-    const filters = [['all', 'All'], ['fail', 'Fix now'], ['warn', 'Check'], ['pass', 'Pass']];
-    el.innerHTML = `<div class="report">
-      ${headHtml(d, opts)}
-      <p class="notice">${ICON.info}<span><b>Automated first-pass screening, not legal advice.</b> Accolm Check reads only what any visitor can see on the page and, where linked, its privacy page. It cannot see how data is stored, who can access it, or whether the business is on the Data Protection Register. A good score does not mean the site complies with Act 843; a low score shows where to look first.</span></p>
-      <div class="report-body">
-        <aside class="report-side">
-          <section class="panel">
-            <h3>What this page asks people for</h3>
-            ${inventoryHtml(d.inventory)}
-            ${d.trackers && d.trackers.length ? `<p class="trackers">Third-party trackers seen: <b>${d.trackers.map(esc).join(', ')}</b></p>` : ''}
-          </section>
-          <section class="panel">
-            <h3>The eight principles of section 17</h3>
-            ${principlesHtml(d.principles)}
-          </section>
-        </aside>
-        <section aria-labelledby="findings-title">
-          <div class="findings-head">
-            <div><h3 id="findings-title">Findings and fixes</h3><p>Most urgent first. Each check is tied to a section of Act 843.</p></div>
-            <div class="segmented no-print" role="group" aria-label="Filter findings">${filters.map(([k, label]) =>
-              `<button type="button" data-filter="${k}" aria-pressed="${k === 'all'}">${label}<span class="n">${n[k]}</span></button>`).join('')}</div>
-          </div>
-          <div class="findings">${findings.map(findingHtml).join('')}</div>
-          <p class="findings-empty" hidden></p>
-        </section>
-      </div>
-    </div>`;
-    el.querySelectorAll('.tally-bar span').forEach((s) => { const v = Number(s.dataset.n); if (v) s.style.flexGrow = v; else s.remove(); });
-    el.querySelectorAll('.finding').forEach((f, i) => f.style.setProperty('--i', Math.min(i, 12)));
-    const empty = el.querySelector('.findings-empty');
+    const c = d.counts;
+    const n = { all: findings.length, fail: c.fail, warn: c.warn, pass: c.pass };
+    const score = Math.max(0, Math.min(100, Number(d.score) || 0));
+    const filled = Math.round((score / 100) * METER);
+    const when = date(d.createdAt) || 'just now';
+    const filters = [['all', 'all'], ['fail', 'fix'], ['warn', 'check'], ['pass', 'pass']];
+    el.innerHTML = `
+      ${opts.log ? `<ol class="log" aria-label="Scan log">${logLines(d, opts.log).join('')}</ol>` : ''}
+      <section class="sect summary band-${esc(d.band.key)}" aria-labelledby="sum-h">
+        <h2 id="sum-h">Summary</h2>
+        <div class="body">
+          <p class="score"><span class="num">${score}</span><span class="of">/100</span><span class="verdict">${esc(d.band.label.toUpperCase())}</span></p>
+          <p class="meter" aria-hidden="true"><span class="br">[</span>${'█'.repeat(filled)}<span class="empty">${'░'.repeat(METER - filled)}</span><span class="br">]</span></p>
+          <dl class="kv">
+            <dt>target</dt><dd>${esc(d.finalUrl)}</dd>
+            <dt>title</dt><dd>${esc(d.title)}</dd>
+            <dt>scanned</dt><dd>${esc(when)}${d.demo ? ' <span class="dim">· demo site</span>' : ''}</dd>
+            <dt>checks</dt><dd><span class="fix">${c.fail} fix</span> · <span class="check">${c.warn} check</span> · <span class="pass">${c.pass} pass</span> <span class="dim">of ${n.all}</span></dd>
+            ${opts.reportId ? `<dt>report</dt><dd>${esc(opts.reportId)}</dd>` : ''}
+          </dl>
+          ${opts.actions ? `<p class="actions">${opts.actions}</p>` : ''}
+          <p class="comment">Automated first-pass screening, not legal advice. Accolm Check reads only what any visitor can see on the page and, where linked, its privacy page. It cannot see how data is stored, who can access it, or whether the business is on the Data Protection Register. A good score does not mean the site complies with Act 843; a low score shows where to look first.</p>
+        </div>
+      </section>
+      <section class="sect" aria-labelledby="col-h"><h2 id="col-h">Collects</h2><div class="body">${inventoryHtml(d)}</div></section>
+      <section class="sect" aria-labelledby="pri-h"><h2 id="pri-h">Principles <span class="dim">· s.17</span></h2><div class="body">${principlesHtml(d.principles)}</div></section>
+      <section class="sect" aria-labelledby="fin-h">
+        <h2 id="fin-h">Findings</h2>
+        <div class="body">
+          <div class="filters" role="group" aria-label="Filter findings">${filters.map(([k, label]) =>
+            `<button type="button" data-filter="${k}" aria-pressed="${k === 'all'}">${label} ${n[k]}</button>`).join('')}</div>
+          ${findings.map(findingHtml).join('')}
+          <p class="none" hidden></p>
+        </div>
+      </section>`;
+    const none = el.querySelector('.none');
     el.querySelectorAll('[data-filter]').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.filter;
       el.querySelectorAll('[data-filter]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      el.querySelectorAll('.finding').forEach((f) => { f.hidden = k !== 'all' && f.dataset.status !== k; });
-      empty.hidden = n[k] > 0;
-      empty.textContent = EMPTY[k] || '';
+      el.querySelectorAll('.f').forEach((f) => { f.hidden = k !== 'all' && f.dataset.status !== k; });
+      none.hidden = n[k] > 0;
+      none.textContent = '# ' + (EMPTY[k] || '');
     }));
   }
 
-  window.A843 = { render, esc, date, ledgerHtml, principlesHtml };
+  // Print the log and sections one after another, like output arriving in a terminal.
+  function reveal(el) {
+    const items = [...el.querySelectorAll('.log li:not(.cmdline), :scope > .sect')];
+    if (calm()) return Promise.resolve();
+    items.forEach((i) => i.classList.add('pending'));
+    return new Promise((done) => {
+      let k = 0;
+      (function next() {
+        if (k >= items.length) return done();
+        const item = items[k++];
+        item.classList.remove('pending');
+        setTimeout(next, item.tagName === 'LI' ? 110 : 70);
+      })();
+    });
+  }
+
+  // Bottom status line: does the API answer?
+  function status() {
+    const el = document.getElementById('api-status');
+    if (!el) return;
+    fetch('/api/health').then((r) => (r.ok ? r.json() : Promise.reject(new Error()))).then((h) => {
+      el.innerHTML = `api <span class="on">● online</span> · db ${esc(h.db)}`;
+    }).catch(() => { el.innerHTML = 'api <span class="off">○ offline</span>'; });
+  }
+
+  // Print every finding, then put the page back as it was.
+  let openedForPrint = [];
+  window.addEventListener('beforeprint', () => {
+    openedForPrint = [...document.querySelectorAll('details.f:not([open])')];
+    openedForPrint.forEach((x) => { x.open = true; });
+  });
+  window.addEventListener('afterprint', () => { openedForPrint.forEach((x) => { x.open = false; }); openedForPrint = []; });
+
+  status();
+  window.A843 = { render, reveal, spinner, esc, date, ledgerHtml };
 })();

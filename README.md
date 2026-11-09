@@ -8,7 +8,7 @@ Accolm Check is a web app that screens a website's public pages for how it colle
 
 Built by Ernest Abel Nanabanyin Mensah (BTech Computer Technology, Kumasi Technical University) as the project for his industrial attachment with Accolm. The name is a nod to Accolm, where the problem was first encountered. This is a student project, not an official Accolm product, and it is not endorsed by Accolm.
 
-## Run it (Node.js 18 or newer)
+## Run it (Node.js 24)
 
 ```bash
 cd accolm-check

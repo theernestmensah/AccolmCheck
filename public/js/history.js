@@ -1,37 +1,31 @@
 (function () {
   'use strict';
-  const list = document.getElementById('rows');
-  const sub = document.getElementById('history-sub');
   const { esc, date } = A843;
-  const BAND = { good: ['Strong start', 'pass'], mid: ['Needs work', 'warn'], low: ['At risk', 'fail'] };
-  const ARROW = '<svg class="arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const out = document.getElementById('rows');
+  const sub = document.getElementById('history-sub');
+  const BAND = { good: 'STRONG START', mid: 'NEEDS WORK', low: 'AT RISK' };
+  const stop = A843.spinner(document.getElementById('loading-spin'));
 
-  function empty(title, text, icon) {
-    document.querySelector('.history-cols').hidden = true;
-    list.outerHTML = `<div class="empty">
-      <span class="empty-mark">${icon}</span>
-      <h2>${title}</h2><p>${text}</p>
-      <div class="page-actions"><a class="button" href="/">Scan a site</a></div>
-    </div>`;
-  }
-
-  fetch('/api/scans?limit=100').then((r) => { if (!r.ok) throw new Error(); return r.json(); }).then((rows) => {
+  fetch('/api/scans?limit=100').then((r) => (r.ok ? r.json() : Promise.reject(new Error()))).then((rows) => {
     if (!rows.length) {
-      return empty('No scans yet', 'Run your first scan, or try one of the offline demo sites on the scan page. Every result will be listed here.',
-        '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3.5" y="3" width="13" height="14" rx="2"/><path d="M7 7.5h6M7 10.5h6M7 13.5h3.5" stroke-linecap="round"/></svg>');
+      out.innerHTML = '<ol class="log"><li class="dim"># no scans yet. Run one from <a href="/">scan</a>, or try one of the demo sites there.</li></ol>';
+      return;
     }
-    sub.textContent = `${rows.length} ${rows.length === 1 ? 'scan' : 'scans'}, newest first. Open any row for its full report.`;
-    list.innerHTML = rows.map((s) => {
-      const [label, st] = BAND[s.band] || [s.band, 'na'];
-      return `<li><a class="row band-${esc(s.band)}" href="/report?id=${encodeURIComponent(s.id)}">
-        <span class="score-chip" aria-label="Score ${Number(s.score)} out of 100">${Number(s.score)}</span>
-        <span class="row-main"><span class="row-title">${esc(s.title)}${s.demo ? '<span class="tag">Demo</span>' : ''}</span><span class="row-url">${esc(s.finalUrl)}</span></span>
-        <span class="row-meta"><span><span class="status ${st}">${esc(label)}</span></span><span class="row-date">${esc(date(s.createdAt))}</span></span>
-        ${ARROW}</a></li>`;
-    }).join('');
-    list.removeAttribute('aria-busy');
+    sub.textContent = `${rows.length} ${rows.length === 1 ? 'scan' : 'scans'}, newest first · open any row for its full report`;
+    out.innerHTML = `<table class="ls">
+      <thead><tr><th class="num">score</th><th>result</th><th>scanned</th><th>site</th></tr></thead>
+      <tbody>${rows.map((s) => `<tr class="band-${esc(s.band)}">
+        <td class="num">${Number(s.score)}</td>
+        <td class="res">${esc(BAND[s.band] || s.band)}</td>
+        <td class="when">${esc(date(s.createdAt))}</td>
+        <td class="site"><a href="/report?id=${encodeURIComponent(s.id)}">${esc(s.host || s.finalUrl)}</a>${s.demo ? ' <span class="dim">[demo]</span>' : ''}<span class="t">${esc(s.title)}</span></td>
+      </tr>`).join('')}</tbody></table>`;
+    // The whole row opens the report; the link inside stays the keyboard route.
+    out.querySelector('tbody').addEventListener('click', (e) => {
+      const link = e.target.closest('tr') && e.target.closest('tr').querySelector('a');
+      if (link && !e.target.closest('a')) link.click();
+    });
   }).catch(() => {
-    empty('History could not be loaded', 'Accolm Check could not reach its database. Refresh the page to try again.',
-      '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 3.5 17.5 16.5h-15Z" stroke-linejoin="round"/><path d="M10 8.5v3.5M10 14.2v.1" stroke-linecap="round"/></svg>');
-  });
+    out.innerHTML = '<ol class="log"><li><span class="bad">✗ error:</span> history could not be loaded: the server did not answer. Refresh to try again.</li></ol>';
+  }).finally(() => { stop(); out.removeAttribute('aria-busy'); });
 })();

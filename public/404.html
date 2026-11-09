@@ -4,39 +4,33 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Page not found · Accolm Check</title>
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0E0F0B">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="weave" aria-hidden="true"></div>
-<header class="site-header">
+<header class="bar">
   <div class="wrap">
-    <a class="brand" href="/"><img src="/img/favicon.svg" alt="">Accolm Check</a>
-    <nav class="nav" aria-label="Main">
-      <a href="/">Scan</a>
-      <a class="nav-how" href="/#how">How it works</a>
-      <a href="/history">History</a>
+    <a class="brand" href="/"><span class="glyph" aria-hidden="true"><i></i><i></i><i></i></span>accolm-check</a>
+    <nav class="menu" aria-label="Main">
+      <a href="/">scan</a>
+      <a href="/history">history</a>
+      <a href="/#help">help</a>
     </nav>
   </div>
 </header>
 
-<main id="main">
-<section class="page-head">
-  <div class="wrap">
-    <div>
-      <p class="kicker">Error 404</p>
-      <h1>This page is not here.</h1>
-      <p class="sub">The address may be mistyped, or the page may have moved. If you were opening a report, check that the whole link was copied.</p>
-    </div>
-  </div>
-</section>
-<section class="page-body">
-  <div class="wrap">
-    <div class="page-actions"><a class="button" href="/">Scan a site</a><a class="button secondary" href="/history">See scan history</a></div>
-  </div>
-</section>
+<main id="main" class="wrap">
+  <section class="page-head">
+    <h1 class="cmd"><span class="ps" aria-hidden="true">$ </span>open <span class="opt">this page</span></h1>
+  </section>
+  <ol class="log page-body">
+    <li><span class="bad">✗</span> accolm-check: no such page <span class="dim">(404)</span></li>
+    <li class="dim"># the address may be mistyped, or the page may have moved. If you were opening a report, check that the whole link was copied.</li>
+  </ol>
+  <p class="actions"><a class="key solid" href="/">scan a site</a> <a class="key" href="/history">scan history</a></p>
 </main>
 </body></html>
